@@ -1,29 +1,139 @@
 <!DOCTYPE html5>
 <html>
 	<head>
-		<script>
-			window.onload = function() {
-				readTextFile("data/sample.txt", displayText);
-			};
-
-			function displayText(text) {
-				document.write(text);
-			}
-
-			function readTextFile(file, callback) {
-				var xhr = new XMLHttpRequest();
-				xhr.open("GET", file, true);
-				xhr.onreadystatechange = function() {
-					if (xhr.readyState === 4) {
-						if (xhr.status === 200) {
-							callback(xhr.responseText);
-						}
-					}
-				};
-				xhr.send(null);
-			}
-		</script>
+		<meta charset="utf-8">
 	</head>
-	<body>
+	<body onload=loadImage("0")>
+        <div>
+            <div class="box">
+                <p style="font-weight: bold;">Legende</p>
+                <p>Tasten auf der Tastatur können benutzt werden</p>
+                <p>"A" = Bild rotiert automatisch um +15°</p>
+                <p>"R" = Bild dreht sich um +15°</p>
+                <p>"L" = Bild dreht sich um -15°</p>
+                <p>"S" = Chicken spiegeln</p>
+            </div>
+            <div class="box">
+                <img id="x">
+                <div>Die Bilder für die Animation wurden selber erstellt</div>
+            </div>
+        </div>
+        <div class="box">
+            &nbsp;
+        </div>
+        <div class="box" style="margin-top: 100px;">
+            <div id="spriteContainer"></div>
+            <div style="margin-top: 20px;">Chicken von <a target="_blank" href="https://pixelplant.itch.io/chicken-sprite-sheet?download">PixelPlant</a> auf itch.io</div>
+            <a target="_blank" href="https://pixelplant.itch.io/chicken-sprite-sheet?download">https://pixelplant.itch.io/chicken-sprite-sheet?download</a>
+        </div>
 	</body>
 </html>
+<script>
+
+function loadImage(rotation) {
+    var imageObj = new Image();
+    imageObj.onload = function() {
+        var img = document.getElementById('x');
+        img.setAttribute('src', this.src);
+    };
+    imageObj.src = "bilder/" + 'rotation_' + rotation + '.jpg';
+}
+
+// Das Ding hier gibt die horizontale Ansicht im Div fuer das Chicken wieder
+let scaleX = 1
+
+window.onkeydown = function(evt) {
+    var key = evt.which ? evt.which : evt.keyCode;
+    var c = String.fromCharCode(key);
+    switch (c) {
+    case ('A'):
+        animationRunning = !animationRunning
+        toggleAnimation()
+        break;
+    case ('L'):
+    if (animationRunning) animationRunning = false
+        changeRotation(-15)
+        loadImage(rotation)
+        break;
+    case ('R'):
+        if (animationRunning) animationRunning = false
+        changeRotation(15)
+        loadImage(rotation)
+        break;
+    case ('S'):
+        const img = document.getElementById('spriteContainer');
+        scaleX *= -1
+        img.style.transform = 'scaleX(' + scaleX + ')';
+        break;
+    }
+};
+
+var rotation = 0;
+var animationRunning = false;
+var step = 15;
+
+function toggleAnimation() {
+    if (animationRunning) {
+        changeRotation(15)
+        loadImage(rotation)
+        setTimeout(() => {
+            toggleAnimation()
+        }, 50);
+    }
+}
+
+function changeRotation(amount) {
+    rotation += amount
+    if (rotation === 360) rotation = 0
+    if (rotation < 0) rotation = 345
+}
+
+const spriteContainer = document.getElementById('spriteContainer');
+const frameWidth = 32; // Jedes Sprite von Chicken hat 32 px. Es gibt 128 x 128 Sprite. Also 4x4 Bilder im Sprite
+const frameHeight = 32;
+const totalColumns = 4;
+const totalRows = 4;
+const totalFrames = totalColumns * totalRows;
+let currentFrame = 0;
+
+function updateSpriteFrame() {
+    let column = currentFrame % totalColumns;
+    let row = Math.floor(currentFrame / totalColumns); // 0 / 4 = 0; 3 / 4 = 0; 4 / 4 = 1...
+
+    let posX = -(column * frameWidth);
+    let posY = -(row * frameHeight);
+
+    // Das Ding hier ueberschreibt backgroundPosition quasi. Also ist es in CSS nicht noetig als Initialwert
+    spriteContainer.style.backgroundPosition = posX + 'px ' + posY + 'px';
+
+    currentFrame = (currentFrame + 1) % totalFrames;
+}
+
+function animateSprite() {
+    updateSpriteFrame();  
+    setTimeout(animateSprite, 100);
+}
+
+// Startet die Animation fuer IMMER
+animateSprite();
+
+</script>
+
+<style>
+    body {
+        background-color: rgb(180, 173, 173);
+    }
+
+    .box {
+        margin:0;
+        width:50%;
+        float:left;
+    }
+    
+    #spriteContainer {
+            width: 32px;
+            height: 32px;
+            overflow: hidden;
+            background-image: url('bilder/Chicken.png');
+        }
+</style>
